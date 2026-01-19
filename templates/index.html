@@ -501,6 +501,9 @@
                                         <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">Video</th>
                                         <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">Resume</th>
                                         <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">Profile</th>
+                                        <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">AI Eval</th>
+                                        <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">AI Rec</th>
+                                        <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">Report</th>
                                         <th class="text-left text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3 min-w-[250px]">Reviewer Comments</th>
                                         <th class="text-left text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">Stage 1 Status</th>
                                     </tr>
@@ -530,6 +533,17 @@
                                         <td class="px-4 py-2"><!-- No filter --></td>
                                         <td class="px-4 py-2"><!-- No filter --></td>
                                         <td class="px-4 py-2"><!-- No filter --></td>
+                                        <td class="px-4 py-2"><!-- AI Eval --></td>
+                                        <td class="px-4 py-2">
+                                            <select id="filter-ai-rec" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                                <option value="">All AI Rec</option>
+                                                <option value="Strong Yes">Strong Yes</option>
+                                                <option value="Yes">Yes</option>
+                                                <option value="Maybe">Maybe</option>
+                                                <option value="No">No</option>
+                                            </select>
+                                        </td>
+                                        <td class="px-4 py-2"><!-- Report --></td>
                                         <td class="px-4 py-2">
                                             <select id="filter-status" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                                                 <option value="">All Status</option>
@@ -542,7 +556,7 @@
                                 </thead>
                                 <tbody class="divide-y divide-slate-100" id="candidates-tbody">
                                     <tr>
-                                        <td colspan="9" class="px-4 py-8 text-center text-slate-500">
+                                        <td colspan="12" class="px-4 py-8 text-center text-slate-500">
                                             <div class="flex items-center justify-center gap-2">
                                                 <svg class="animate-spin w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24">
                                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -727,6 +741,7 @@
             const levelFilter = document.getElementById('filter-level').value;
             const mbaFilter = document.getElementById('filter-mba').value;
             const statusFilter = document.getElementById('filter-status').value;
+            const aiRecFilter = document.getElementById('filter-ai-rec') ? document.getElementById('filter-ai-rec').value : '';
 
             filteredCandidatesData = candidatesData.filter(candidate => {
                 // Name filter
@@ -751,6 +766,11 @@
                     if (mbaFilter === 'top-tier' && !isTopTier) return false;
                     if (mbaFilter === 'other-mba' && (!hasMba || isTopTier)) return false;
                     if (mbaFilter === 'no-mba' && hasMba) return false;
+                }
+
+                // AI Rec filter
+                if (aiRecFilter) {
+                    if (candidate.ai_rec !== aiRecFilter) return false;
                 }
 
                 // Status filter
@@ -780,7 +800,8 @@
             const hasFilters = document.getElementById('filter-name').value ||
                               document.getElementById('filter-level').value ||
                               document.getElementById('filter-mba').value ||
-                              document.getElementById('filter-status').value;
+                              document.getElementById('filter-status').value ||
+                              (document.getElementById('filter-ai-rec') ? document.getElementById('filter-ai-rec').value : '');
 
             if (hasFilters) {
                 statusText.textContent = `Showing ${filtered} of ${total} candidates`;
@@ -832,7 +853,7 @@
                 console.error('Error loading candidates:', error);
                 document.getElementById('candidates-tbody').innerHTML = `
                     <tr>
-                        <td colspan="9" class="px-4 py-8 text-center text-red-500">
+                        <td colspan="12" class="px-4 py-8 text-center text-red-500">
                             Error loading candidates: ${error.message}
                         </td>
                     </tr>
@@ -846,7 +867,7 @@
             if (filteredCandidatesData.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="9" class="px-4 py-8 text-center text-slate-500">
+                        <td colspan="12" class="px-4 py-8 text-center text-slate-500">
                             ${candidatesData.length === 0 ? 'No video submissions found' : 'No candidates match the current filters'}
                         </td>
                     </tr>
@@ -922,6 +943,55 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </svg>
                         </button>
+                    </td>
+
+                    <!-- AI Eval Score -->
+                    <td class="px-4 py-3 text-center">
+                        ${candidate.ai_eval ?
+                            `<div class="text-sm font-semibold text-slate-900">${candidate.ai_eval.toFixed(2)}</div>
+                             <div class="text-xs text-slate-500">${candidate.ai_doer_prob ? (candidate.ai_doer_prob * 100).toFixed(0) + '%' : '-'} doer</div>
+                             <button onclick="triggerEvaluation('${candidate.id}', this, true)"
+                                class="inline-flex items-center gap-1 px-1.5 py-0.5 mt-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs rounded">
+                                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                </svg>Re-run
+                             </button>` :
+                            (candidate.has_transcript ?
+                                `<button onclick="triggerEvaluation('${candidate.id}', this)"
+                                    class="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-medium rounded-lg transition-colors">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                                    </svg>
+                                    Evaluate
+                                </button>` :
+                                `<span class="text-slate-400 text-xs">No transcript</span>`)
+                        }
+                    </td>
+
+                    <!-- AI Recommendation -->
+                    <td class="px-4 py-3 text-center">
+                        ${candidate.ai_rec ?
+                            `<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium
+                                ${candidate.ai_rec === 'Strong Yes' ? 'bg-emerald-100 text-emerald-800' :
+                                  candidate.ai_rec === 'Yes' ? 'bg-green-100 text-green-800' :
+                                  candidate.ai_rec === 'Maybe' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-red-100 text-red-800'}">
+                                ${candidate.ai_rec === 'Strong Yes' ? '★★★ ' : candidate.ai_rec === 'Yes' ? '★★ ' : candidate.ai_rec === 'Maybe' ? '★ ' : ''}${candidate.ai_rec}
+                            </span>` :
+                            '<span class="text-slate-400 text-xs">-</span>'}
+                    </td>
+
+                    <!-- AI Report -->
+                    <td class="px-4 py-3 text-center">
+                        ${candidate.ai_report_url ?
+                            `<a href="${candidate.ai_report_url}" target="_blank"
+                                class="inline-flex items-center justify-center w-9 h-9 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors"
+                                title="View AI Report">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </a>` :
+                            '<span class="text-slate-400 text-xs">-</span>'}
                     </td>
 
                     <!-- Reviewer Comments -->
@@ -1018,6 +1088,43 @@
         }
 
         // Update Status
+        
+        // Trigger AI Evaluation
+        async function triggerEvaluation(recordId, buttonElement, isRerun = false) {
+            // Show loading state
+            const originalHtml = buttonElement.innerHTML;
+            buttonElement.disabled = true;
+            buttonElement.innerHTML = '<svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+            buttonElement.classList.add('opacity-50', 'cursor-not-allowed');
+
+            try {
+                const response = await fetch('/api/trigger-evaluation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ record_id: recordId, force_rerun: isRerun })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Evaluation completed successfully', 'success');
+                    // Refresh the data to show updated values
+                    await loadCandidates();
+                } else {
+                    showToast(result.error || 'Evaluation failed', 'error');
+                    buttonElement.innerHTML = originalHtml;
+                    buttonElement.disabled = false;
+                    buttonElement.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            } catch (error) {
+                console.error('Evaluation error:', error);
+                showToast('Failed to trigger evaluation', 'error');
+                buttonElement.innerHTML = originalHtml;
+                buttonElement.disabled = false;
+                buttonElement.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
         async function updateStatus(recordId, newStatus, selectElement) {
             const originalValue = selectElement.getAttribute('data-original-value') || '';
             selectElement.disabled = true;
