@@ -1098,7 +1098,7 @@
             buttonElement.classList.add('opacity-50', 'cursor-not-allowed');
 
             try {
-                const response = await fetch('/api/trigger-evaluation', {
+                const response = await fetch('api/trigger-evaluation', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ record_id: recordId, force_rerun: isRerun })
