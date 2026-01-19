@@ -1107,7 +1107,11 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showToast('Evaluation completed successfully', 'success');
+                    if (result.queued) {
+                        showToast('Evaluation queued at position ' + result.position + '. Will process automatically.', 'info');
+                    } else {
+                        showToast('Evaluation completed successfully', 'success');
+                    }
                     // Refresh the data to show updated values
                     await loadCandidates();
                 } else {
