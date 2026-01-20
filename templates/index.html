@@ -513,14 +513,25 @@
                                             <input type="text" id="filter-name" onchange="applyFilters()" placeholder="Search name..." class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                                         </td>
                                         <td class="px-4 py-2">
-                                            <select id="filter-level" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                                                <option value="">All Levels</option>
-                                                <option value="Level 5">Level 5</option>
-                                                <option value="Level 4">Level 4</option>
-                                                <option value="Level 3">Level 3</option>
+                                            <select id="filter-level" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 mb-1">
+                                                <option value="">All</option>
+                                                <option value="Level 5">L5</option>
+                                                <option value="Level 4">L4</option>
+                                                <option value="Level 3">L3</option>
+                                            </select>
+                                            <select id="sort-level" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                                <option value="">Sort</option>
+                                                <option value="desc">5→3</option>
+                                                <option value="asc">3→5</option>
                                             </select>
                                         </td>
-                                        <td class="px-4 py-2"><!-- No filter --></td>
+                                        <td class="px-4 py-2">
+                                            <select id="sort-exp" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                                <option value="">Sort Exp</option>
+                                                <option value="desc">High→Low</option>
+                                                <option value="asc">Low→High</option>
+                                            </select>
+                                        </td>
                                         <td class="px-4 py-2">
                                             <select id="filter-mba" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                                                 <option value="">All MBA</option>
@@ -533,14 +544,25 @@
                                         <td class="px-4 py-2"><!-- No filter --></td>
                                         <td class="px-4 py-2"><!-- No filter --></td>
                                         <td class="px-4 py-2"><!-- No filter --></td>
-                                        <td class="px-4 py-2"><!-- AI Eval --></td>
                                         <td class="px-4 py-2">
-                                            <select id="filter-ai-rec" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                                                <option value="">All AI Rec</option>
-                                                <option value="Strong Yes">Strong Yes</option>
-                                                <option value="Yes">Yes</option>
-                                                <option value="Maybe">Maybe</option>
+                                            <select id="sort-ai-eval" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                                <option value="">Sort</option>
+                                                <option value="desc">High → Low</option>
+                                                <option value="asc">Low → High</option>
+                                            </select>
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <select id="filter-ai-rec" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 mb-1">
+                                                <option value="">All</option>
+                                                <option value="Strong Yes">★★★</option>
+                                                <option value="Yes">★★</option>
+                                                <option value="Maybe">★</option>
                                                 <option value="No">No</option>
+                                            </select>
+                                            <select id="sort-ai-rec" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                                <option value="">Sort</option>
+                                                <option value="desc">Best→Worst</option>
+                                                <option value="asc">Worst→Best</option>
                                             </select>
                                         </td>
                                         <td class="px-4 py-2"><!-- Report --></td>
@@ -786,6 +808,65 @@
                 return true;
             });
 
+            // Apply sorting based on active sort dropdown
+            const levelSort = document.getElementById('sort-level') ? document.getElementById('sort-level').value : '';
+            const expSort = document.getElementById('sort-exp') ? document.getElementById('sort-exp').value : '';
+            const aiEvalSort = document.getElementById('sort-ai-eval') ? document.getElementById('sort-ai-eval').value : '';
+            const aiRecSort = document.getElementById('sort-ai-rec') ? document.getElementById('sort-ai-rec').value : '';
+            
+            // Helper function to get level number (5, 4, 3)
+            const getLevelNum = (level) => {
+                if (!level) return 0;
+                const match = level.match(/Level (\d+)/);
+                return match ? parseInt(match[1]) : 0;
+            };
+            
+            // Helper function to get AI Rec rank (Strong Yes=4, Yes=3, Maybe=2, No=1, none=0)
+            const getAiRecRank = (rec) => {
+                if (!rec) return 0;
+                const ranks = {'Strong Yes': 4, 'Yes': 3, 'Maybe': 2, 'No': 1};
+                return ranks[rec] || 0;
+            };
+            
+            // Sort by Level
+            if (levelSort) {
+                filteredCandidatesData.sort((a, b) => {
+                    const aVal = getLevelNum(a.level);
+                    const bVal = getLevelNum(b.level);
+                    if (aVal === 0) return 1;
+                    if (bVal === 0) return -1;
+                    return levelSort === 'desc' ? bVal - aVal : aVal - bVal;
+                });
+            }
+            // Sort by Experience
+            else if (expSort) {
+                filteredCandidatesData.sort((a, b) => {
+                    const aVal = parseFloat(a.total_exp) || 0;
+                    const bVal = parseFloat(b.total_exp) || 0;
+                    return expSort === 'desc' ? bVal - aVal : aVal - bVal;
+                });
+            }
+            // Sort by AI Eval
+            else if (aiEvalSort) {
+                filteredCandidatesData.sort((a, b) => {
+                    const aVal = a.ai_eval;
+                    const bVal = b.ai_eval;
+                    if (aVal === null || aVal === undefined) return 1;
+                    if (bVal === null || bVal === undefined) return -1;
+                    return aiEvalSort === 'desc' ? bVal - aVal : aVal - bVal;
+                });
+            }
+            // Sort by AI Rec
+            else if (aiRecSort) {
+                filteredCandidatesData.sort((a, b) => {
+                    const aVal = getAiRecRank(a.ai_rec);
+                    const bVal = getAiRecRank(b.ai_rec);
+                    if (aVal === 0) return 1;
+                    if (bVal === 0) return -1;
+                    return aiRecSort === 'desc' ? bVal - aVal : aVal - bVal;
+                });
+            }
+
             renderCandidatesTable();
             updateFilterStatus();
         }
@@ -801,7 +882,11 @@
                               document.getElementById('filter-level').value ||
                               document.getElementById('filter-mba').value ||
                               document.getElementById('filter-status').value ||
-                              (document.getElementById('filter-ai-rec') ? document.getElementById('filter-ai-rec').value : '');
+                              (document.getElementById('filter-ai-rec') ? document.getElementById('filter-ai-rec').value : '') ||
+                              (document.getElementById('sort-level') ? document.getElementById('sort-level').value : '') ||
+                              (document.getElementById('sort-exp') ? document.getElementById('sort-exp').value : '') ||
+                              (document.getElementById('sort-ai-eval') ? document.getElementById('sort-ai-eval').value : '') ||
+                              (document.getElementById('sort-ai-rec') ? document.getElementById('sort-ai-rec').value : '');
 
             if (hasFilters) {
                 statusText.textContent = `Showing ${filtered} of ${total} candidates`;
@@ -818,6 +903,11 @@
             document.getElementById('filter-level').value = '';
             document.getElementById('filter-mba').value = '';
             document.getElementById('filter-status').value = '';
+            if (document.getElementById('filter-ai-rec')) document.getElementById('filter-ai-rec').value = '';
+            if (document.getElementById('sort-level')) document.getElementById('sort-level').value = '';
+            if (document.getElementById('sort-exp')) document.getElementById('sort-exp').value = '';
+            if (document.getElementById('sort-ai-eval')) document.getElementById('sort-ai-eval').value = '';
+            if (document.getElementById('sort-ai-rec')) document.getElementById('sort-ai-rec').value = '';
             localStorage.removeItem(FILTER_STORAGE_KEY);
             applyFilters();
         }
