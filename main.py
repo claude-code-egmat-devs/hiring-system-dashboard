@@ -168,6 +168,16 @@ def calculate_metrics(records):
         else:
             ai_rec_breakdown["Not Evaluated"] += 1
 
+    # Transcript Processing breakdown (based on AI_Status)
+    transcript_processed = 0
+    transcript_not_processed = 0
+    for f in video_submissions:
+        ai_status = f.get("AI_Status", "").strip()
+        if ai_status == "Completed":
+            transcript_processed += 1
+        else:
+            transcript_not_processed += 1
+
     return {
         "total_applications": total_applications,
         "source_breakdown": source_breakdown,
@@ -181,7 +191,9 @@ def calculate_metrics(records):
         "video_mba_breakdown": video_mba_breakdown,
         "video_mba_institutions": video_mba_institution_breakdown,
         "video_stage_breakdown": video_stage_breakdown,
-        "ai_rec_breakdown": ai_rec_breakdown
+        "ai_rec_breakdown": ai_rec_breakdown,
+        "transcript_processed": transcript_processed,
+        "transcript_not_processed": transcript_not_processed
     }
 
 
