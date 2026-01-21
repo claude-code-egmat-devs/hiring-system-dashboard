@@ -168,12 +168,12 @@ def calculate_metrics(records):
         else:
             ai_rec_breakdown["Not Evaluated"] += 1
 
-    # Transcript Processing breakdown
+    # Transcript Processing breakdown (based on AI_Status)
     transcript_processed = 0
     transcript_not_processed = 0
     for f in video_submissions:
-        transcript = f.get("Video_link_transcript", "").strip()
-        if transcript:
+        ai_status = f.get("AI_Status", "").strip()
+        if ai_status == "Completed":
             transcript_processed += 1
         else:
             transcript_not_processed += 1
