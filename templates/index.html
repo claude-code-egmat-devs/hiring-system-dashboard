@@ -328,6 +328,45 @@
                         </div>
                     </div>
 
+                    <!-- Transcript Processing Breakdown -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Transcript Processing</p>
+                                <p class="text-xs text-slate-400 mt-1">breakdown by transcript status</p>
+                            </div>
+                            <div class="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="text-center p-3 bg-slate-50 rounded-lg">
+                                <p class="text-2xl font-bold text-slate-900">{{ metrics.video_count }}</p>
+                                <p class="text-xs text-slate-500 mt-1">Total Submitted</p>
+                            </div>
+                            <div class="text-center p-3 bg-green-50 rounded-lg">
+                                <p class="text-2xl font-bold text-green-600">{{ metrics.transcript_processed }}</p>
+                                <p class="text-xs text-green-700 mt-1">Processed</p>
+                            </div>
+                            <div class="text-center p-3 bg-amber-50 rounded-lg">
+                                <p class="text-2xl font-bold text-amber-600">{{ metrics.transcript_not_processed }}</p>
+                                <p class="text-xs text-amber-700 mt-1">Not Processed</p>
+                            </div>
+                        </div>
+                        <!-- Progress bar -->
+                        <div class="mt-4">
+                            <div class="flex justify-between text-xs text-slate-500 mb-1">
+                                <span>Processing Progress</span>
+                                <span>{{ ((metrics.transcript_processed / metrics.video_count) * 100)|round(1) if metrics.video_count > 0 else 0 }}%</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                                <div class="h-full bg-green-500 rounded-full" style="width: {{ ((metrics.transcript_processed / metrics.video_count) * 100)|round(1) if metrics.video_count > 0 else 0 }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Video Breakdown Grid -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <!-- By Level -->
