@@ -215,10 +215,16 @@ def api_video_submitters():
                 resume_pdf = fields.get("Resume_pdf", [])
                 pdf_url = resume_pdf[0].get("url", "") if resume_pdf else ""
 
+                # Get name and append (S) for student applications
+                applicant_name = fields.get("Applicant_Name", "")
+                source = fields.get("Source", "")
+                if source == "student_application":
+                    applicant_name = f"{applicant_name} (S)"
+
                 submitter = {
                     "id": record.get("id"),
                     "email": fields.get("Applicant_Email", ""),
-                    "name": fields.get("Applicant_Name", ""),
+                    "name": applicant_name,
                     "phone": fields.get("Applicant_Phone", ""),
                     "mba_college": fields.get("MBA_Institution_Name", "N/A"),
                     "has_mba": fields.get("Has_MBA", "No"),
