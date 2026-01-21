@@ -28,7 +28,7 @@
             transition: max-height 0.3s ease-out;
         }
         .section-content.expanded {
-            max-height: 5000px;
+            max-height: 50000px;
             transition: max-height 0.5s ease-in;
         }
         .chevron {
@@ -494,44 +494,43 @@
                             <table class="w-full" id="candidates-table">
                                 <thead class="bg-slate-50 border-b border-slate-200">
                                     <tr>
+                                        <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-2 py-3 w-12">S.No</th>
                                         <th class="text-left text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">Name / Email</th>
-                                        <th class="text-left text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">Level</th>
-                                        <th class="text-left text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">Experience</th>
+                                        <th class="text-left text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3 cursor-pointer hover:bg-slate-100 select-none" onclick="toggleSort('level')">
+                                            <span class="flex items-center gap-1">Level <span id="sort-icon-level" class="text-slate-400"></span></span>
+                                        </th>
+                                        <th class="text-left text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3 cursor-pointer hover:bg-slate-100 select-none" onclick="toggleSort('exp')">
+                                            <span class="flex items-center gap-1">Experience <span id="sort-icon-exp" class="text-slate-400"></span></span>
+                                        </th>
                                         <th class="text-left text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">MBA</th>
                                         <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">Video</th>
                                         <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">Resume</th>
                                         <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">Profile</th>
-                                        <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">AI Eval</th>
-                                        <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">AI Rec</th>
+                                        <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3 cursor-pointer hover:bg-slate-100 select-none" onclick="toggleSort('ai_eval')">
+                                            <span class="flex items-center justify-center gap-1">AI Eval <span id="sort-icon-ai_eval" class="text-slate-400"></span></span>
+                                        </th>
+                                        <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3 cursor-pointer hover:bg-slate-100 select-none" onclick="toggleSort('ai_rec')">
+                                            <span class="flex items-center justify-center gap-1">AI Rec <span id="sort-icon-ai_rec" class="text-slate-400"></span></span>
+                                        </th>
                                         <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">Report</th>
                                         <th class="text-left text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3 min-w-[180px]">Reviewer Comments</th>
                                         <th class="text-left text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3 min-w-[130px]">Stage 1 Status</th>
                                     </tr>
                                     <!-- Filter Row -->
                                     <tr class="bg-slate-100 border-b border-slate-200">
+                                        <td class="px-2 py-2"><!-- S.No --></td>
                                         <td class="px-4 py-2">
                                             <input type="text" id="filter-name" onchange="applyFilters()" placeholder="Search name..." class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                                         </td>
                                         <td class="px-4 py-2">
-                                            <select id="filter-level" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 mb-1">
+                                            <select id="filter-level" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                                                 <option value="">All</option>
                                                 <option value="Level 5">L5</option>
                                                 <option value="Level 4">L4</option>
                                                 <option value="Level 3">L3</option>
                                             </select>
-                                            <select id="sort-level" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                                                <option value="">Sort</option>
-                                                <option value="desc">5→3</option>
-                                                <option value="asc">3→5</option>
-                                            </select>
                                         </td>
-                                        <td class="px-4 py-2">
-                                            <select id="sort-exp" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                                                <option value="">Sort Exp</option>
-                                                <option value="desc">High→Low</option>
-                                                <option value="asc">Low→High</option>
-                                            </select>
-                                        </td>
+                                        <td class="px-4 py-2"><!-- Experience filter --></td>
                                         <td class="px-4 py-2">
                                             <select id="filter-mba" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                                                 <option value="">All MBA</option>
@@ -543,28 +542,18 @@
                                         <td class="px-4 py-2"><!-- Video --></td>
                                         <td class="px-4 py-2"><!-- Resume --></td>
                                         <td class="px-4 py-2"><!-- Profile --></td>
+                                        <td class="px-4 py-2"><!-- AI Eval filter --></td>
                                         <td class="px-4 py-2">
-                                            <select id="sort-ai-eval" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                                                <option value="">Sort</option>
-                                                <option value="desc">High → Low</option>
-                                                <option value="asc">Low → High</option>
-                                            </select>
-                                        </td>
-                                        <td class="px-4 py-2">
-                                            <select id="filter-ai-rec" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 mb-1">
+                                            <select id="filter-ai-rec" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                                                 <option value="">All</option>
                                                 <option value="Strong Yes">★★★</option>
                                                 <option value="Yes">★★</option>
                                                 <option value="Maybe">★</option>
                                                 <option value="No">No</option>
                                             </select>
-                                            <select id="sort-ai-rec" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                                                <option value="">Sort</option>
-                                                <option value="desc">Best→Worst</option>
-                                                <option value="asc">Worst→Best</option>
-                                            </select>
                                         </td>
                                         <td class="px-4 py-2"><!-- Report --></td>
+                                        <td class="px-4 py-2"><!-- Reviewer Comments --></td>
                                         <td class="px-4 py-2">
                                             <select id="filter-status" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                                                 <option value="">All Status</option>
@@ -577,7 +566,7 @@
                                 </thead>
                                 <tbody class="divide-y divide-slate-100" id="candidates-tbody">
                                     <tr>
-                                        <td colspan="12" class="px-4 py-8 text-center text-slate-500">
+                                        <td colspan="13" class="px-4 py-8 text-center text-slate-500">
                                             <div class="flex items-center justify-center gap-2">
                                                 <svg class="animate-spin w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24">
                                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -643,6 +632,51 @@
     <script>
         let candidatesData = [];
         let filteredCandidatesData = [];
+        let currentSort = { column: null, direction: null }; // Track current sort state
+        // Toggle sort on column header click
+        function toggleSort(column) {
+            // If clicking same column, toggle direction: asc -> desc -> off
+            if (currentSort.column === column) {
+                if (currentSort.direction === 'asc') {
+                    currentSort.direction = 'desc';
+                } else if (currentSort.direction === 'desc') {
+                    currentSort.column = null;
+                    currentSort.direction = null;
+                } else {
+                    currentSort.direction = 'asc';
+                }
+            } else {
+                // New column, start with descending (best first)
+                currentSort.column = column;
+                currentSort.direction = 'desc';
+            }
+            
+            // Update all sort icons
+            updateSortIcons();
+            
+            // Re-apply filters (which includes sorting)
+            applyFilters();
+        }
+        
+        // Update sort icons to show current state
+        function updateSortIcons() {
+            const columns = ['level', 'exp', 'ai_eval', 'ai_rec'];
+            columns.forEach(col => {
+                const icon = document.getElementById('sort-icon-' + col);
+                if (icon) {
+                    if (currentSort.column === col) {
+                        icon.textContent = currentSort.direction === 'asc' ? '▲' : '▼';
+                        icon.classList.remove('text-slate-400');
+                        icon.classList.add('text-indigo-600');
+                    } else {
+                        icon.textContent = '';
+                        icon.classList.remove('text-indigo-600');
+                        icon.classList.add('text-slate-400');
+                    }
+                }
+            });
+        }
+
         let autoRefreshInterval = null;
         let countdownInterval = null;
         let countdownSeconds = 15 * 60; // 15 minutes in seconds
@@ -807,63 +841,55 @@
                 return true;
             });
 
-            // Apply sorting based on active sort dropdown
-            const levelSort = document.getElementById('sort-level') ? document.getElementById('sort-level').value : '';
-            const expSort = document.getElementById('sort-exp') ? document.getElementById('sort-exp').value : '';
-            const aiEvalSort = document.getElementById('sort-ai-eval') ? document.getElementById('sort-ai-eval').value : '';
-            const aiRecSort = document.getElementById('sort-ai-rec') ? document.getElementById('sort-ai-rec').value : '';
-            
-            // Helper function to get level number (5, 4, 3)
-            const getLevelNum = (level) => {
-                if (!level) return 0;
-                const match = level.match(/Level (\d+)/);
-                return match ? parseInt(match[1]) : 0;
-            };
-            
-            // Helper function to get AI Rec rank (Strong Yes=4, Yes=3, Maybe=2, No=1, none=0)
-            const getAiRecRank = (rec) => {
-                if (!rec) return 0;
-                const ranks = {'Strong Yes': 4, 'Yes': 3, 'Maybe': 2, 'No': 1};
-                return ranks[rec] || 0;
-            };
-            
-            // Sort by Level
-            if (levelSort) {
-                filteredCandidatesData.sort((a, b) => {
-                    const aVal = getLevelNum(a.level);
-                    const bVal = getLevelNum(b.level);
-                    if (aVal === 0) return 1;
-                    if (bVal === 0) return -1;
-                    return levelSort === 'desc' ? bVal - aVal : aVal - bVal;
-                });
-            }
-            // Sort by Experience
-            else if (expSort) {
-                filteredCandidatesData.sort((a, b) => {
-                    const aVal = parseFloat(a.total_exp) || 0;
-                    const bVal = parseFloat(b.total_exp) || 0;
-                    return expSort === 'desc' ? bVal - aVal : aVal - bVal;
-                });
-            }
-            // Sort by AI Eval
-            else if (aiEvalSort) {
-                filteredCandidatesData.sort((a, b) => {
-                    const aVal = a.ai_eval;
-                    const bVal = b.ai_eval;
-                    if (aVal === null || aVal === undefined) return 1;
-                    if (bVal === null || bVal === undefined) return -1;
-                    return aiEvalSort === 'desc' ? bVal - aVal : aVal - bVal;
-                });
-            }
-            // Sort by AI Rec
-            else if (aiRecSort) {
-                filteredCandidatesData.sort((a, b) => {
-                    const aVal = getAiRecRank(a.ai_rec);
-                    const bVal = getAiRecRank(b.ai_rec);
-                    if (aVal === 0) return 1;
-                    if (bVal === 0) return -1;
-                    return aiRecSort === 'desc' ? bVal - aVal : aVal - bVal;
-                });
+            // Apply sorting based on currentSort state
+            if (currentSort.column && currentSort.direction) {
+                // Helper function to get level number (5, 4, 3)
+                const getLevelNum = (level) => {
+                    if (!level) return 0;
+                    const match = level.match(/Level (\d+)/);
+                    return match ? parseInt(match[1]) : 0;
+                };
+                
+                // Helper function to get AI Rec rank (Strong Yes=4, Yes=3, Maybe=2, No=1, none=0)
+                const getAiRecRank = (rec) => {
+                    if (!rec) return 0;
+                    const ranks = {'Strong Yes': 4, 'Yes': 3, 'Maybe': 2, 'No': 1};
+                    return ranks[rec] || 0;
+                };
+                
+                const sortDir = currentSort.direction;
+                
+                if (currentSort.column === 'level') {
+                    filteredCandidatesData.sort((a, b) => {
+                        const aVal = getLevelNum(a.level);
+                        const bVal = getLevelNum(b.level);
+                        if (aVal === 0) return 1;
+                        if (bVal === 0) return -1;
+                        return sortDir === 'desc' ? bVal - aVal : aVal - bVal;
+                    });
+                } else if (currentSort.column === 'exp') {
+                    filteredCandidatesData.sort((a, b) => {
+                        const aVal = parseFloat(a.total_exp) || 0;
+                        const bVal = parseFloat(b.total_exp) || 0;
+                        return sortDir === 'desc' ? bVal - aVal : aVal - bVal;
+                    });
+                } else if (currentSort.column === 'ai_eval') {
+                    filteredCandidatesData.sort((a, b) => {
+                        const aVal = a.ai_eval;
+                        const bVal = b.ai_eval;
+                        if (aVal === null || aVal === undefined) return 1;
+                        if (bVal === null || bVal === undefined) return -1;
+                        return sortDir === 'desc' ? bVal - aVal : aVal - bVal;
+                    });
+                } else if (currentSort.column === 'ai_rec') {
+                    filteredCandidatesData.sort((a, b) => {
+                        const aVal = getAiRecRank(a.ai_rec);
+                        const bVal = getAiRecRank(b.ai_rec);
+                        if (aVal === 0) return 1;
+                        if (bVal === 0) return -1;
+                        return sortDir === 'desc' ? bVal - aVal : aVal - bVal;
+                    });
+                }
             }
 
             renderCandidatesTable();
@@ -882,10 +908,7 @@
                               document.getElementById('filter-mba').value ||
                               document.getElementById('filter-status').value ||
                               (document.getElementById('filter-ai-rec') ? document.getElementById('filter-ai-rec').value : '') ||
-                              (document.getElementById('sort-level') ? document.getElementById('sort-level').value : '') ||
-                              (document.getElementById('sort-exp') ? document.getElementById('sort-exp').value : '') ||
-                              (document.getElementById('sort-ai-eval') ? document.getElementById('sort-ai-eval').value : '') ||
-                              (document.getElementById('sort-ai-rec') ? document.getElementById('sort-ai-rec').value : '');
+                              currentSort.column;
 
             if (hasFilters) {
                 statusText.textContent = `Showing ${filtered} of ${total} candidates`;
@@ -903,10 +926,10 @@
             document.getElementById('filter-mba').value = '';
             document.getElementById('filter-status').value = '';
             if (document.getElementById('filter-ai-rec')) document.getElementById('filter-ai-rec').value = '';
-            if (document.getElementById('sort-level')) document.getElementById('sort-level').value = '';
-            if (document.getElementById('sort-exp')) document.getElementById('sort-exp').value = '';
-            if (document.getElementById('sort-ai-eval')) document.getElementById('sort-ai-eval').value = '';
-            if (document.getElementById('sort-ai-rec')) document.getElementById('sort-ai-rec').value = '';
+            // Reset sort state
+            currentSort.column = null;
+            currentSort.direction = null;
+            updateSortIcons();
             localStorage.removeItem(FILTER_STORAGE_KEY);
             applyFilters();
         }
@@ -933,6 +956,11 @@
                 const response = await fetch('api/video-submitters');
                 candidatesData = await response.json();
 
+                // Assign serial numbers based on initial load order (1-indexed)
+                candidatesData.forEach((candidate, index) => {
+                    candidate.serialNumber = index + 1;
+                });
+
                 document.getElementById('section3-subtitle').textContent =
                     `${candidatesData.length} candidates with video submissions`;
 
@@ -942,7 +970,7 @@
                 console.error('Error loading candidates:', error);
                 document.getElementById('candidates-tbody').innerHTML = `
                     <tr>
-                        <td colspan="12" class="px-4 py-8 text-center text-red-500">
+                        <td colspan="13" class="px-4 py-8 text-center text-red-500">
                             Error loading candidates: ${error.message}
                         </td>
                     </tr>
@@ -956,7 +984,7 @@
             if (filteredCandidatesData.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="12" class="px-4 py-8 text-center text-slate-500">
+                        <td colspan="13" class="px-4 py-8 text-center text-slate-500">
                             ${candidatesData.length === 0 ? 'No video submissions found' : 'No candidates match the current filters'}
                         </td>
                     </tr>
@@ -966,6 +994,10 @@
 
             tbody.innerHTML = filteredCandidatesData.map((candidate, index) => `
                 <tr class="hover:bg-slate-50 transition-colors">
+                    <!-- S.No -->
+                    <td class="px-2 py-3 text-center">
+                        <span class="text-sm font-medium text-slate-500">${candidate.serialNumber}</span>
+                    </td>
                     <!-- Name / Email -->
                     <td class="px-4 py-3">
                         <div class="font-medium text-slate-900">${candidate.name || 'N/A'}</div>
