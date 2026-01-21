@@ -2,6 +2,13 @@
 
 All notable changes to the Hiring System Dashboard.
 
+## [v1.4] - 2026-01-21
+
+### Added
+- Transcript Processing metrics card in Section 2
+- Shows Processed vs Not Processed count based on AI_Status == "Completed"
+- Card styled to match Stage 1 Review Status format
+
 ## [v1.3] - 2026-01-21
 
 ### Added

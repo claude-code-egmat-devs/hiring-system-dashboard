@@ -6,11 +6,34 @@ Flask-based dashboard for tracking and managing hiring candidates for the Head o
 
 - **Candidate Overview**: View all video submissions with filtering and sorting
 - **AI Evaluation**: Integrated AI-powered candidate evaluation with scores and recommendations
+- **Transcript Processing Metrics**: Track video processing status (Processed vs Not Processed)
 - **Serial Numbers**: Candidates numbered for easy reference
 - **Student Indicator**: Student applicants marked with (S) suffix for quick identification
 - **Real-time Updates**: Auto-refresh with countdown timer
 - **Status Management**: Update candidate stage status directly from dashboard
 - **Reviewer Comments**: Add and save reviewer notes for each candidate
+
+## Dashboard Sections
+
+### Section 1: Overall Metrics
+- Total applications count
+- Applications by source breakdown
+- Applications by filter level (Level 5/4/3)
+- Top-Tier MBA and UG institution breakdowns
+
+### Section 2: Video Submissions
+- Total video submissions count
+- **By Filter Level**: Breakdown of videos by candidate level
+- **By MBA Status**: Top-Tier MBA, Other MBA, No MBA
+- **Stage 1 Review Status**: Selected, Rejected, Not Reviewed
+- **Transcript Processing**: Processed vs Not Processed (based on `AI_Status == "Completed"`)
+
+### Section 3: Candidate Review
+- Interactive table with all video submitters
+- Sortable columns (Level, Experience, AI Eval, AI Rec)
+- Filters for name, level, MBA status, AI recommendation, stage status
+- Direct links to video, resume PDF, and AI report
+- Inline editing for reviewer comments and stage status
 
 ## Deployment
 
