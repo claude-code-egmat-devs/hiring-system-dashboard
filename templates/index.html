@@ -25,14 +25,11 @@
         .section-content {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
-            opacity: 0;
+            transition: max-height 0.3s ease-out;
         }
         .section-content.expanded {
-            max-height: none;
-            overflow: visible;
-            opacity: 1;
-            transition: opacity 0.3s ease-in;
+            max-height: 50000px;
+            transition: max-height 0.5s ease-in;
         }
         .chevron {
             transition: transform 0.2s ease;
@@ -497,7 +494,6 @@
                             <table class="w-full" id="candidates-table">
                                 <thead class="bg-slate-50 border-b border-slate-200">
                                     <tr>
-                                        <th class="text-center text-xs font-semibold text-slate-600 uppercase tracking-wider px-2 py-3 w-12">S.No</th>
                                         <th class="text-left text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3">Name / Email</th>
                                         <th class="text-left text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 py-3 cursor-pointer hover:bg-slate-100 select-none" onclick="toggleSort('level')">
                                             <span class="flex items-center gap-1">Level <span id="sort-icon-level" class="text-slate-400"></span></span>
@@ -521,7 +517,6 @@
                                     </tr>
                                     <!-- Filter Row -->
                                     <tr class="bg-slate-100 border-b border-slate-200">
-                                        <td class="px-2 py-2"><!-- S.No --></td>
                                         <td class="px-4 py-2">
                                             <input type="text" id="filter-name" onchange="applyFilters()" placeholder="Search name..." class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                                         </td>
@@ -533,7 +528,7 @@
                                                 <option value="Level 3">L3</option>
                                             </select>
                                         </td>
-                                        <td class="px-4 py-2"><!-- Experience --></td>
+                                        <td class="px-4 py-2"><!-- Experience filter --></td>
                                         <td class="px-4 py-2">
                                             <select id="filter-mba" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                                                 <option value="">All MBA</option>
@@ -545,7 +540,7 @@
                                         <td class="px-4 py-2"><!-- Video --></td>
                                         <td class="px-4 py-2"><!-- Resume --></td>
                                         <td class="px-4 py-2"><!-- Profile --></td>
-                                        <td class="px-4 py-2"><!-- AI Eval --></td>
+                                        <td class="px-4 py-2"><!-- AI Eval filter --></td>
                                         <td class="px-4 py-2">
                                             <select id="filter-ai-rec" onchange="applyFilters()" class="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                                                 <option value="">All</option>
@@ -569,7 +564,7 @@
                                 </thead>
                                 <tbody class="divide-y divide-slate-100" id="candidates-tbody">
                                     <tr>
-                                        <td colspan="13" class="px-4 py-8 text-center text-slate-500">
+                                        <td colspan="12" class="px-4 py-8 text-center text-slate-500">
                                             <div class="flex items-center justify-center gap-2">
                                                 <svg class="animate-spin w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24">
                                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -636,16 +631,6 @@
         let candidatesData = [];
         let filteredCandidatesData = [];
         let currentSort = { column: null, direction: null }; // Track current sort state
-        let autoRefreshInterval = null;
-        let countdownInterval = null;
-        let countdownSeconds = 15 * 60; // 15 minutes in seconds
-
-        // Auto-refresh cutoff date: January 30, 2026
-        const AUTO_REFRESH_CUTOFF = new Date('2026-01-30T23:59:59');
-
-        // Filter storage key for localStorage
-        const FILTER_STORAGE_KEY = 'hiring-dashboard-filters';
-
         // Toggle sort on column header click
         function toggleSort(column) {
             // If clicking same column, toggle direction: asc -> desc -> off
@@ -663,14 +648,14 @@
                 currentSort.column = column;
                 currentSort.direction = 'desc';
             }
-
+            
             // Update all sort icons
             updateSortIcons();
-
+            
             // Re-apply filters (which includes sorting)
             applyFilters();
         }
-
+        
         // Update sort icons to show current state
         function updateSortIcons() {
             const columns = ['level', 'exp', 'ai_eval', 'ai_rec'];
@@ -689,6 +674,16 @@
                 }
             });
         }
+
+        let autoRefreshInterval = null;
+        let countdownInterval = null;
+        let countdownSeconds = 15 * 60; // 15 minutes in seconds
+
+        // Auto-refresh cutoff date: January 30, 2026
+        const AUTO_REFRESH_CUTOFF = new Date('2026-01-30T23:59:59');
+
+        // Filter storage key for localStorage
+        const FILTER_STORAGE_KEY = 'hiring-dashboard-filters';
 
         // Check if auto-refresh should be active
         function isAutoRefreshActive() {
@@ -852,16 +847,16 @@
                     const match = level.match(/Level (\d+)/);
                     return match ? parseInt(match[1]) : 0;
                 };
-
+                
                 // Helper function to get AI Rec rank (Strong Yes=4, Yes=3, Maybe=2, No=1, none=0)
                 const getAiRecRank = (rec) => {
                     if (!rec) return 0;
                     const ranks = {'Strong Yes': 4, 'Yes': 3, 'Maybe': 2, 'No': 1};
                     return ranks[rec] || 0;
                 };
-
+                
                 const sortDir = currentSort.direction;
-
+                
                 if (currentSort.column === 'level') {
                     filteredCandidatesData.sort((a, b) => {
                         const aVal = getLevelNum(a.level);
@@ -959,11 +954,6 @@
                 const response = await fetch('api/video-submitters');
                 candidatesData = await response.json();
 
-                // Assign serial numbers based on initial load order (1-indexed)
-                candidatesData.forEach((candidate, index) => {
-                    candidate.serialNumber = index + 1;
-                });
-
                 document.getElementById('section3-subtitle').textContent =
                     `${candidatesData.length} candidates with video submissions`;
 
@@ -973,7 +963,7 @@
                 console.error('Error loading candidates:', error);
                 document.getElementById('candidates-tbody').innerHTML = `
                     <tr>
-                        <td colspan="13" class="px-4 py-8 text-center text-red-500">
+                        <td colspan="12" class="px-4 py-8 text-center text-red-500">
                             Error loading candidates: ${error.message}
                         </td>
                     </tr>
@@ -987,7 +977,7 @@
             if (filteredCandidatesData.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="13" class="px-4 py-8 text-center text-slate-500">
+                        <td colspan="12" class="px-4 py-8 text-center text-slate-500">
                             ${candidatesData.length === 0 ? 'No video submissions found' : 'No candidates match the current filters'}
                         </td>
                     </tr>
@@ -997,10 +987,6 @@
 
             tbody.innerHTML = filteredCandidatesData.map((candidate, index) => `
                 <tr class="hover:bg-slate-50 transition-colors">
-                    <!-- S.No -->
-                    <td class="px-2 py-3 text-center">
-                        <span class="text-sm font-medium text-slate-500">${candidate.serialNumber}</span>
-                    </td>
                     <!-- Name / Email -->
                     <td class="px-4 py-3">
                         <div class="font-medium text-slate-900">${candidate.name || 'N/A'}</div>

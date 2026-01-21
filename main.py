@@ -1,6 +1,7 @@
 """
 Hiring System Dashboard - Flask Application
 Connects to Airtable and displays hiring metrics
+Includes AI Video Evaluation features
 """
 
 import os
@@ -15,15 +16,18 @@ load_dotenv()
 app = Flask(__name__)
 
 # Airtable Configuration
-AIRTABLE_PAT = os.getenv('AIRTABLE_PAT')
-AIRTABLE_BASE_ID = os.getenv('AIRTABLE_BASE_ID')
-AIRTABLE_TABLE_ID = os.getenv('AIRTABLE_TABLE_ID')
+AIRTABLE_PAT = os.getenv("AIRTABLE_PAT")
+AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID")
+AIRTABLE_TABLE_ID = os.getenv("AIRTABLE_TABLE_ID")
 
 AIRTABLE_URL = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_ID}"
 HEADERS = {
     "Authorization": f"Bearer {AIRTABLE_PAT}",
     "Content-Type": "application/json"
 }
+
+# Hiring API URL for evaluation
+HIRING_API_URL = os.getenv("HIRING_API_URL", "https://srv1079050.hstgr.cloud/hiring-api")
 
 
 def fetch_all_records():
@@ -78,7 +82,6 @@ def calculate_metrics(records):
     # Level Breakdown
     levels = [f.get("Filt_Level", "Unknown") for f in fields_list]
     level_breakdown = Counter(levels)
-    # Sort by level number
     level_order = {"Level 5": 1, "Level 4": 2, "Level 3": 3, "Unknown": 4}
     level_breakdown = dict(sorted(level_breakdown.items(), key=lambda x: level_order.get(x[0], 5)))
 
@@ -102,7 +105,6 @@ def calculate_metrics(records):
         is_top_tier_ug = f.get("UG_School_Top_Tier", "").lower() == "yes"
         is_top_tier_mba = f.get("is_Top-Tier", "").lower() == "yes"
 
-        # Only count if they have top-tier UG but NOT top-tier MBA
         if is_top_tier_ug and not is_top_tier_mba:
             top_tier_ug.append(f)
             inst = f.get("Undergrad_School_Name", "Unknown")
@@ -157,6 +159,15 @@ def calculate_metrics(records):
         else:
             video_stage_breakdown["Not Reviewed"] += 1
 
+    # AI Recommendation breakdown
+    ai_rec_breakdown = {"Strong Yes": 0, "Yes": 0, "Maybe": 0, "No": 0, "Not Evaluated": 0}
+    for f in video_submissions:
+        ai_rec = f.get("AI_Rec", "").strip()
+        if ai_rec in ai_rec_breakdown:
+            ai_rec_breakdown[ai_rec] += 1
+        else:
+            ai_rec_breakdown["Not Evaluated"] += 1
+
     return {
         "total_applications": total_applications,
         "source_breakdown": source_breakdown,
@@ -165,12 +176,12 @@ def calculate_metrics(records):
         "mba_institutions": mba_institution_breakdown,
         "top_tier_ug_count": len(top_tier_ug),
         "ug_institutions": ug_institution_breakdown,
-        # Section 2
         "video_count": video_count,
         "video_level_breakdown": video_level_breakdown,
         "video_mba_breakdown": video_mba_breakdown,
         "video_mba_institutions": video_mba_institution_breakdown,
-        "video_stage_breakdown": video_stage_breakdown
+        "video_stage_breakdown": video_stage_breakdown,
+        "ai_rec_breakdown": ai_rec_breakdown
     }
 
 
@@ -188,7 +199,7 @@ def dashboard():
 
 @app.route("/api/metrics")
 def api_metrics():
-    """API endpoint for metrics (for future AJAX updates)"""
+    """API endpoint for metrics"""
     try:
         records = fetch_all_records()
         filtered_records = filter_test_entries(records)
@@ -200,7 +211,7 @@ def api_metrics():
 
 @app.route("/api/video-submitters")
 def api_video_submitters():
-    """API endpoint for video submitters list with full details"""
+    """API endpoint for video submitters list with full details including AI evaluation"""
     try:
         records = fetch_all_records()
         filtered_records = filter_test_entries(records)
@@ -211,7 +222,6 @@ def api_video_submitters():
             video_link = fields.get("Video_Link", "").strip()
 
             if video_link:
-                # Get PDF URL from attachment
                 resume_pdf = fields.get("Resume_pdf", [])
                 pdf_url = resume_pdf[0].get("url", "") if resume_pdf else ""
 
@@ -235,7 +245,7 @@ def api_video_submitters():
                     "video_link": video_link,
                     "pdf_url": pdf_url,
                     "stage_1_status": fields.get("Stage 1 Status", ""),
-                    "source": fields.get("Source", ""),
+                    "source": source,
                     "ug_school": fields.get("Undergrad_School_Name", "N/A"),
                     "ug_top_tier": fields.get("UG_School_Top_Tier", "No"),
                     "has_relevant_exp": fields.get("Has_Relevant_Exp", ""),
@@ -245,7 +255,13 @@ def api_video_submitters():
                     "referrer": fields.get("Referrer", ""),
                     "analysis": fields.get("Analysis_explanation", ""),
                     "reviewer_comments": fields.get("Reviewer Comments", ""),
-                    # All fields for profile viewer
+                    # AI Evaluation fields
+                    "ai_eval": fields.get("AI_Eval"),
+                    "ai_doer_prob": fields.get("AI_Doer_Prob"),
+                    "ai_rec": fields.get("AI_Rec", ""),
+                    "ai_report_url": fields.get("AI_Report_URL", ""),
+                    "ai_status": fields.get("AI_Status", ""),
+                    "has_transcript": bool(fields.get("Video_link_transcript", "").strip()),
                     "all_fields": fields
                 }
                 video_submitters.append(submitter)
@@ -270,7 +286,6 @@ def update_status():
         if not record_id:
             return jsonify({"error": "record_id is required"}), 400
 
-        # Update Airtable record
         update_url = f"{AIRTABLE_URL}/{record_id}"
         payload = {
             "fields": {
@@ -300,7 +315,6 @@ def update_comments():
         if not record_id:
             return jsonify({"error": "record_id is required"}), 400
 
-        # Update Airtable record
         update_url = f"{AIRTABLE_URL}/{record_id}"
         payload = {
             "fields": {
@@ -319,5 +333,49 @@ def update_comments():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/trigger-evaluation", methods=["POST"])
+def trigger_evaluation():
+    """Trigger AI evaluation for a candidate via Hiring API"""
+    try:
+        data = request.get_json()
+        record_id = data.get("record_id")
+        force_rerun = data.get("force_rerun", False)
+
+        if not record_id:
+            return jsonify({"error": "record_id is required"}), 400
+
+        # If force_rerun, clear existing AI fields first
+        if force_rerun:
+            update_url = f"{AIRTABLE_URL}/{record_id}"
+            clear_payload = {
+                "fields": {
+                    "AI_Eval": None,
+                    "AI_Doer_Prob": None,
+                    "AI_Rec": None,
+                    "AI_Report_URL": None,
+                    "AI_Status": None
+                }
+            }
+            requests.patch(update_url, headers=HEADERS, json=clear_payload)
+
+        # Call the Hiring API evaluation endpoint
+        eval_url = f"{HIRING_API_URL}/api/v1/evaluations/evaluate"
+        response = requests.post(
+            eval_url,
+            json={"record_id": record_id},
+            timeout=180  # 3 minute timeout for evaluation with thinking
+        )
+
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            return jsonify({"error": response.text}), response.status_code
+
+    except requests.Timeout:
+        return jsonify({"error": "Evaluation timed out. Please try again."}), 504
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5010)
