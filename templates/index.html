@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hiring Dashboard - Head of Customer Success</title>
+    <title>Hiring Dashboard - Learning Architect</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -52,7 +52,7 @@
                     </div>
                     <div>
                         <h1 class="text-lg font-semibold text-slate-900">Hiring Dashboard</h1>
-                        <p class="text-xs text-slate-500">Head of Customer Success</p>
+                        <p class="text-xs text-slate-500">Learning Architect</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
@@ -488,8 +488,7 @@
                 </div>
             </div>
         </section>
-
-        <!-- Section 3: Interactive Table -->
+<!-- Section 3: Interactive Table -->
         <section class="mb-6">
             <button onclick="toggleSection('section3')" class="w-full bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:bg-slate-50 transition-colors">
                 <div class="flex items-center justify-between">
@@ -715,49 +714,77 @@
 
         let autoRefreshInterval = null;
         let countdownInterval = null;
-        let countdownSeconds = 15 * 60; // 15 minutes in seconds
+        let countdownSeconds = 15 * 60;
 
-        // Auto-refresh cutoff date: January 30, 2026
-        const AUTO_REFRESH_CUTOFF = new Date('2026-01-30T23:59:59');
+        // ── Cache configuration ──
+        const CACHE_KEY = 'hiring-dashboard-data';
+        const CACHE_TTL_SECONDS = 15 * 60;
+        const CACHE_TTL_MS = CACHE_TTL_SECONDS * 1000;
 
         // Filter storage key for localStorage
         const FILTER_STORAGE_KEY = 'hiring-dashboard-filters';
 
-        // Check if auto-refresh should be active
-        function isAutoRefreshActive() {
-            const now = new Date();
-            return now <= AUTO_REFRESH_CUTOFF;
+        // ── Cache helpers ──
+        function getCache() {
+            try {
+                const raw = localStorage.getItem(CACHE_KEY);
+                if (!raw) return null;
+                return JSON.parse(raw);
+            } catch (e) { return null; }
         }
 
-        // Initialize auto-refresh
-        function initAutoRefresh() {
-            if (!isAutoRefreshActive()) {
-                // Hide the auto-refresh indicator if past cutoff
-                const indicator = document.getElementById('auto-refresh-indicator');
-                if (indicator) {
-                    indicator.classList.add('hidden');
-                    indicator.classList.remove('sm:inline-flex');
-                }
-                return;
+        function setCache(data) {
+            try {
+                data.timestamp = Date.now();
+                localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.warn('Cache save failed:', e);
             }
+        }
 
-            // Show auto-refresh indicator
+        function clearCache() {
+            localStorage.removeItem(CACHE_KEY);
+        }
+
+        function isCacheFresh() {
+            const cache = getCache();
+            if (!cache || !cache.timestamp) return false;
+            return (Date.now() - cache.timestamp) < CACHE_TTL_MS;
+        }
+
+        // Load all data from APIs and save to cache
+        async function loadAllDataFromAPI() {
+            await Promise.all([loadCandidates()]);
+            setCache({
+                candidates: candidatesData
+            });
+        }
+
+        // Populate UI from localStorage cache (no API calls)
+        function loadFromCache(cache) {
+            // Candidates
+            candidatesData = cache.candidates || [];
+            candidatesData.forEach((c, i) => c.serialNumber = i + 1);
+            document.getElementById('section3-subtitle').textContent =
+                `${candidatesData.length} candidates with video submissions`;
+            applyFilters();
+
+        }
+
+        // Initialize auto-refresh countdown
+        function initAutoRefresh() {
             const indicator = document.getElementById('auto-refresh-indicator');
             if (indicator) {
                 indicator.classList.remove('hidden');
             }
 
-            // Start countdown
-            countdownSeconds = 15 * 60;
             updateCountdownDisplay();
 
-            // Countdown timer (every second)
             countdownInterval = setInterval(() => {
                 countdownSeconds--;
                 updateCountdownDisplay();
 
                 if (countdownSeconds <= 0) {
-                    // Trigger refresh
                     performAutoRefresh();
                 }
             }, 1000);
@@ -767,30 +794,19 @@
         function updateCountdownDisplay() {
             const countdownEl = document.getElementById('auto-refresh-countdown');
             if (countdownEl) {
-                const minutes = Math.floor(countdownSeconds / 60);
-                const seconds = countdownSeconds % 60;
+                const minutes = Math.floor(Math.max(0, countdownSeconds) / 60);
+                const seconds = Math.max(0, countdownSeconds) % 60;
                 countdownEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
             }
         }
 
-        // Perform auto-refresh
+        // Perform auto-refresh (every 15 minutes)
         async function performAutoRefresh() {
-            // Check again if auto-refresh is still active
-            if (!isAutoRefreshActive()) {
-                clearInterval(countdownInterval);
-                const indicator = document.getElementById('auto-refresh-indicator');
-                if (indicator) {
-                    indicator.classList.add('hidden');
-                }
-                return;
-            }
+            countdownSeconds = CACHE_TTL_SECONDS;
 
-            // Reset countdown
-            countdownSeconds = 15 * 60;
-
-            // Refresh data without page reload
             try {
-                await loadCandidates();
+                clearCache();
+                await loadAllDataFromAPI();
                 showToast('Data auto-refreshed', 'success');
             } catch (error) {
                 console.error('Auto-refresh failed:', error);
@@ -1105,8 +1121,8 @@
                     <!-- AI Eval Score -->
                     <td class="px-4 py-3 text-center">
                         ${candidate.ai_eval ?
-                            `<div class="text-sm font-semibold text-slate-900">${candidate.ai_eval.toFixed(2)}</div>
-                             <div class="text-xs text-slate-500">${candidate.ai_doer_prob ? (candidate.ai_doer_prob * 100).toFixed(0) + '%' : '-'} doer</div>
+                            `<div class="text-sm font-semibold text-slate-900">${parseFloat(candidate.ai_eval).toFixed(2)}</div>
+                             <div class="text-xs text-slate-500">${candidate.ai_mindset || '-'}</div>
                              <button onclick="triggerEvaluation('${candidate.id}', this, true)"
                                 class="inline-flex items-center gap-1 px-1.5 py-0.5 mt-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs rounded">
                                 <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -1270,6 +1286,7 @@
                         showToast('Evaluation completed successfully', 'success');
                     }
                     // Refresh the data to show updated values
+                    clearCache();
                     await loadCandidates();
                 } else {
                     showToast(result.error || 'Evaluation failed', 'error');
@@ -1322,6 +1339,7 @@
                     selectElement.setAttribute('data-original-value', newStatus);
 
                     // Show success feedback
+                    clearCache();
                     showToast('Status updated successfully', 'success');
                 } else {
                     throw new Error(result.error || 'Update failed');
@@ -1375,6 +1393,7 @@
                         textareaElement.classList.add('border-slate-200');
                     }, 1500);
 
+                    clearCache();
                     showToast('Comments saved', 'success');
                 } else {
                     throw new Error(result.error || 'Failed to save comments');
@@ -1442,16 +1461,9 @@
             icon.classList.add('animate-spin');
             text.textContent = 'Refreshing...';
 
-            try {
-                // Reload the page to get fresh metrics
-                window.location.reload();
-            } catch (error) {
-                console.error('Error refreshing:', error);
-                showToast('Failed to refresh data', 'error');
-                btn.disabled = false;
-                icon.classList.remove('animate-spin');
-                text.textContent = 'Refresh Data';
-            }
+            // Clear browser cache, then full page reload with server cache bust
+            clearCache();
+            window.location.href = window.location.pathname + '?refresh=1';
         }
 
         // Update Section 2 stage counts in real-time
@@ -1486,10 +1498,34 @@
             // Load saved filters from localStorage
             loadFilters();
 
-            // Load candidates (will apply filters automatically)
-            loadCandidates();
+            // Check if this is a forced refresh (via ?refresh=1)
+            const urlParams = new URLSearchParams(window.location.search);
+            const isForceRefresh = urlParams.get('refresh') === '1';
 
-            // Initialize auto-refresh (checks cutoff date internally)
+            if (isForceRefresh) {
+                // Clean URL (remove ?refresh=1) without reloading
+                history.replaceState(null, '', window.location.pathname);
+                // Force fresh data from APIs
+                console.log('Force refresh — fetching fresh data from server');
+                clearCache();
+                loadAllDataFromAPI();
+                countdownSeconds = CACHE_TTL_SECONDS;
+            } else {
+                // Check cache — load from browser memory if fresh
+                const cache = getCache();
+                if (cache && isCacheFresh()) {
+                    console.log('Loading from cache (age: ' + Math.round((Date.now() - cache.timestamp) / 1000) + 's)');
+                    loadFromCache(cache);
+                    const ageSeconds = Math.floor((Date.now() - cache.timestamp) / 1000);
+                    countdownSeconds = Math.max(0, CACHE_TTL_SECONDS - ageSeconds);
+                } else {
+                    console.log('Cache stale or missing — fetching from server');
+                    loadAllDataFromAPI();
+                    countdownSeconds = CACHE_TTL_SECONDS;
+                }
+            }
+
+            // Initialize auto-refresh countdown
             initAutoRefresh();
         });
     </script>

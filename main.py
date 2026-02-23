@@ -9,6 +9,7 @@ import requests
 from flask import Flask, render_template, jsonify, request
 from collections import Counter
 from dotenv import load_dotenv
+import time
 
 # Load environment variables
 load_dotenv()
@@ -27,7 +28,38 @@ HEADERS = {
 }
 
 # Hiring API URL for evaluation
-HIRING_API_URL = os.getenv("HIRING_API_URL", "https://srv1079050.hstgr.cloud/hiring-api")
+HIRING_API_URL = os.getenv("HIRING_API_URL", "https://srv1079050.hstgr.cloud/hiring-api-la")
+
+
+# ──────────────────────────────────────────────────
+# In-memory cache for Airtable records (15-min TTL)
+# ──────────────────────────────────────────────────
+_cache = {
+    "filtered_records": None,
+    "timestamp": 0
+}
+CACHE_TTL = 15 * 60  # 15 minutes
+
+
+def get_cached_data(force_refresh=False):
+    """Get filtered records with caching. Returns (filtered_records, cache_timestamp)."""
+    now = time.time()
+    if (not force_refresh
+            and _cache["filtered_records"] is not None
+            and (now - _cache["timestamp"]) < CACHE_TTL):
+        return _cache["filtered_records"], _cache["timestamp"]
+
+    records = fetch_all_records()
+    filtered = filter_test_entries(records)
+    _cache["filtered_records"] = filtered
+    _cache["timestamp"] = now
+    return filtered, now
+
+
+def invalidate_cache():
+    """Clear the cache so next read fetches fresh data."""
+    _cache["filtered_records"] = None
+    _cache["timestamp"] = 0
 
 
 def fetch_all_records():
@@ -169,9 +201,13 @@ def calculate_metrics(records):
             ai_rec_breakdown["Not Evaluated"] += 1
 
     # Transcript Processing breakdown (based on AI_Status)
+    # Exclude Stage 1 Rejected candidates from the count
     transcript_processed = 0
     transcript_not_processed = 0
     for f in video_submissions:
+        stage1_status = f.get("Stage 1 Status", "").strip()
+        if stage1_status == "Rejected":
+            continue
         ai_status = f.get("AI_Status", "").strip()
         if ai_status == "Completed":
             transcript_processed += 1
@@ -201,10 +237,10 @@ def calculate_metrics(records):
 def dashboard():
     """Main dashboard page"""
     try:
-        records = fetch_all_records()
-        filtered_records = filter_test_entries(records)
+        force = request.args.get('refresh') == '1'
+        filtered_records, cached_at = get_cached_data(force_refresh=force)
         metrics = calculate_metrics(filtered_records)
-        return render_template("index.html", metrics=metrics)
+        return render_template("index.html", metrics=metrics, cached_at=cached_at)
     except Exception as e:
         return render_template("index.html", error=str(e), metrics=None)
 
@@ -213,9 +249,10 @@ def dashboard():
 def api_metrics():
     """API endpoint for metrics"""
     try:
-        records = fetch_all_records()
-        filtered_records = filter_test_entries(records)
+        force = request.args.get('refresh') == '1'
+        filtered_records, cached_at = get_cached_data(force_refresh=force)
         metrics = calculate_metrics(filtered_records)
+        metrics["cached_at"] = cached_at
         return jsonify(metrics)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -225,8 +262,8 @@ def api_metrics():
 def api_video_submitters():
     """API endpoint for video submitters list with full details including AI evaluation"""
     try:
-        records = fetch_all_records()
-        filtered_records = filter_test_entries(records)
+        force = request.args.get('refresh') == '1'
+        filtered_records, _ = get_cached_data(force_refresh=force)
 
         video_submitters = []
         for record in filtered_records:
@@ -234,6 +271,11 @@ def api_video_submitters():
             video_link = fields.get("Video_Link", "").strip()
 
             if video_link:
+                # Skip candidates rejected after video evaluation
+                ai_rec = fields.get("AI_Rec", "").strip()
+                if ai_rec == "No":
+                    continue
+
                 resume_pdf = fields.get("Resume_pdf", [])
                 pdf_url = resume_pdf[0].get("url", "") if resume_pdf else ""
 
@@ -269,7 +311,7 @@ def api_video_submitters():
                     "reviewer_comments": fields.get("Reviewer Comments", ""),
                     # AI Evaluation fields
                     "ai_eval": fields.get("AI_Eval"),
-                    "ai_doer_prob": fields.get("AI_Doer_Prob"),
+                    "ai_mindset": fields.get("AI_Mindset"),
                     "ai_rec": fields.get("AI_Rec", ""),
                     "ai_report_url": fields.get("AI_Report_URL", ""),
                     "ai_status": fields.get("AI_Status", ""),
@@ -308,6 +350,7 @@ def update_status():
         response = requests.patch(update_url, headers=HEADERS, json=payload)
 
         if response.status_code == 200:
+            invalidate_cache()
             return jsonify({"success": True, "record": response.json()})
         else:
             return jsonify({"error": response.text}), response.status_code
@@ -337,6 +380,7 @@ def update_comments():
         response = requests.patch(update_url, headers=HEADERS, json=payload)
 
         if response.status_code == 200:
+            invalidate_cache()
             return jsonify({"success": True, "record": response.json()})
         else:
             return jsonify({"error": response.text}), response.status_code
@@ -362,7 +406,7 @@ def trigger_evaluation():
             clear_payload = {
                 "fields": {
                     "AI_Eval": None,
-                    "AI_Doer_Prob": None,
+                    "AI_Mindset": None,
                     "AI_Rec": None,
                     "AI_Report_URL": None,
                     "AI_Status": None
@@ -379,6 +423,7 @@ def trigger_evaluation():
         )
 
         if response.status_code == 200:
+            invalidate_cache()
             return jsonify(response.json())
         else:
             return jsonify({"error": response.text}), response.status_code
@@ -389,5 +434,6 @@ def trigger_evaluation():
         return jsonify({"error": str(e)}), 500
 
 
+
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5010)
+    app.run(debug=True, host="0.0.0.0", port=5012)
